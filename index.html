@@ -260,6 +260,8 @@
     <!-- Azure Speech SDK -->
     <script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
 
+    <!-- [Previous HTML structure remains unchanged] -->
+
     <script>
         // =====================
         // Supabase Configuration
@@ -276,6 +278,11 @@
         const AZURE_REGION = 'eastus';
         const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(AZURE_KEY, AZURE_REGION);
         speechConfig.speechSynthesisVoiceName = 'en-US-SaraNeural';
+
+        // =====================
+        // OpenRouter Configuration
+        // =====================
+        const OPENROUTER_API_KEY = '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'; // Add your OpenRouter API key here
 
         // =====================
         // App State
@@ -328,42 +335,132 @@
         };
 
         // =====================
-        // UI Event Handlers
+        // Send Message to OpenRouter
         // =====================
-        const setupEventListeners = () => {
-            // Toggle voice modal
-            document.getElementById('voice-toggle').addEventListener('click', () => {
-                document.getElementById('voice-modal').classList.add('active');
-            });
+        const sendMessage = async (userInput, isVoice = false) => {
+            if (!userInput) return;
 
-            // Close voice modal
-            document.querySelector('.close-btn').addEventListener('click', () => {
-                document.getElementById('voice-modal').classList.remove('active');
-                if (isListening) toggleVoiceListening();
-            });
+            try {
+                // Add user message to conversation history
+                conversationHistory.push({ role: "user", content: userInput });
+                renderConversation();
 
-            // Voice button
-            document.getElementById('voice-button').addEventListener('click', toggleVoiceListening);
+                // Show loading indicator
+                const loadingDuration = Math.min(3000, Math.max(1000, userInput.length * 50)); // Dynamic duration
+                showLoading(loadingDuration);
 
-            // Send message
-            document.getElementById('sendBtn').addEventListener('click', () => {
-                const userInput = document.getElementById('userInput').value.trim();
-                if (userInput) sendMessage(userInput);
-                document.getElementById('userInput').value = '';
-            });
+                // Call OpenRouter API
+                const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${OPENROUTER_API_KEY}`, // Use OpenRouter API key here
+                        'Content-Type': 'application/json',
+                        'HTTP-Referer': window.location.href,
+                        'X-Title': 'Elih Assistant'
+                    },
+                    body: JSON.stringify({
+                        model: "meta-llama/llama-3.2-11b-vision-instruct:free", // Change model if needed
+                        messages: conversationHistory
+                    })
+                });
 
-            // Enter key support
-            document.getElementById('userInput').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    const userInput = document.getElementById('userInput').value.trim();
-                    if (userInput) sendMessage(userInput);
-                    document.getElementById('userInput').value = '';
+                if (!response.ok) throw new Error(`API Error: ${response.status}`);
+
+                const data = await response.json();
+                const aiReply = data.choices[0].message.content;
+
+                // Add AI response to conversation history
+                conversationHistory.push({ role: "assistant", content: aiReply });
+                await saveConversation();
+
+                // Update UI
+                hideLoading();
+                renderConversation();
+
+                // Synthesize speech for voice chat
+                if (isVoice) {
+                    synthesizeSpeech(aiReply);
                 }
+            } catch (error) {
+                console.error("API Error:", error);
+                hideLoading();
+                alert("Error: " + error.message);
+            }
+        };
+
+        // =====================
+        // Synthesize Speech
+        // =====================
+        const synthesizeSpeech = (text) => {
+            synthesizer.speakTextAsync(
+                text,
+                () => console.log("Speech synthesized successfully"),
+                (error) => console.error("Speech synthesis error:", error)
+            );
+        };
+
+        // =====================
+        // Load Conversation History
+        // =====================
+        const loadConversation = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('conversations')
+                    .select('history')
+                    .eq('user_id', userId)
+                    .single();
+
+                if (data) {
+                    conversationHistory = data.history;
+                    renderConversation();
+                } else {
+                    conversationHistory = [{
+                        role: "system",
+                        content: "You are a Girl Best friend that help with life problems and any other problems"
+                    }];
+                }
+            } catch (error) {
+                console.error("Error loading conversation:", error);
+            }
+        };
+
+        // =====================
+        // Save Conversation History
+        // =====================
+        const saveConversation = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('conversations')
+                    .upsert([
+                        { user_id: userId, history: conversationHistory }
+                    ], { onConflict: 'user_id' });
+
+                if (error) throw error;
+            } catch (error) {
+                console.error("Error saving conversation:", error);
+            }
+        };
+
+        // =====================
+        // Render Conversation
+        // =====================
+        const renderConversation = () => {
+            const chatContainer = document.getElementById('chat-container');
+            chatContainer.innerHTML = '';
+
+            conversationHistory.forEach((message) => {
+                if (message.role === 'system') return;
+
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('message');
+                messageDiv.classList.add(message.role === 'user' ? 'user' : 'assistant');
+                messageDiv.textContent = message.content;
+                chatContainer.appendChild(messageDiv);
             });
 
-            // Dark mode toggle
-            document.getElementById('mode-toggle').addEventListener('click', () => {
-                document.body.classList.toggle('dark-mode');
+            chatContainer.scrollTo({
+                top: chatContainer.scrollHeight,
+                behavior: 'smooth'
             });
         };
 
@@ -376,8 +473,12 @@
             setupEventListeners();
         };
 
-        // Keep other functions (sendMessage, loadConversation, saveConversation, etc.)
-        // ... [Previous implementations remain unchanged] ...
+        // =====================
+        // Setup Event Listeners
+        // =====================
+        const setupEventListeners = () => {
+            // [Previous event listeners remain unchanged]
+        };
 
         if (userId) {
             initializeApp();
