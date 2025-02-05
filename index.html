@@ -47,72 +47,7 @@
             align-self: flex-start;
         }
 
-        /* Input Container */
-        #input-container {
-            display: flex;
-            padding: 20px;
-            background: #ffffff;
-            border-top: 1px solid #ddd;
-            gap: 10px;
-        }
-
-        #userInput {
-            flex: 1;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-        }
-
-        /* Voice Chat Interface */
-        #voice-container {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.95);
-            z-index: 1000;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .voice-wave {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: #007bff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-
-        #voice-status {
-            margin-top: 20px;
-            font-size: 18px;
-            color: #333;
-        }
-
-        .close-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            font-size: 24px;
-            cursor: pointer;
-            color: #666;
-        }
-
-        /* Loading Bubble */
+        /* Loading Indicator */
         .loading-bubble {
             display: inline-block;
             padding: 12px 16px;
@@ -120,7 +55,10 @@
             background: #e9ecef;
             align-self: flex-start;
             margin: 10px;
-            max-width: 120px;
+        }
+
+        .loading-dots {
+            display: inline-block;
         }
 
         .loading-dots span {
@@ -133,192 +71,401 @@
             animation: bounce 1.4s infinite ease-in-out;
         }
 
+        .loading-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .loading-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
         @keyframes bounce {
-            0%, 80%, 100% { transform: translateY(0); }
-            40% { transform: translateY(-8px); }
+            0%, 80%, 100% { 
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-8px);
+            }
+        }
+
+        /* Input Container */
+        #input-container {
+            display: flex;
+            padding: 20px;
+            background: #ffffff;
+            border-top: 1px solid #ddd;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        #userInput {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-right: 10px;
+            transition: border-color 0.3s ease;
+        }
+
+        #userInput:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+
+        #sendBtn {
+            padding: 12px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            transform: scale(1);
+        }
+
+        #sendBtn:hover {
+            background: #0056b3;
+            transform: scale(1.05);
+        }
+
+        #sendBtn:active {
+            transform: scale(0.95);
+        }
+
+        /* Voice Chat Button */
+        #voiceBtn {
+            padding: 12px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-left: 10px;
+            transition: all 0.3s ease;
+        }
+
+        #voiceBtn:hover {
+            background: #218838;
+        }
+
+        /* Voice Chat Page */
+        #voice-page {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: #ffffff;
+        }
+
+        #voice-page h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        #voice-page button {
+            padding: 12px 20px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #voice-page button:hover {
+            background: #c82333;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 480px) {
+            .message {
+                max-width: 85%;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Chat Container -->
-    <div id="chat-container"></div>
+    <!-- Text Chat Container -->
+    <div id="chat-container">
+        <!-- Messages will be dynamically added here -->
+    </div>
 
     <!-- Input Container -->
     <div id="input-container">
         <input type="text" id="userInput" placeholder="Type your message...">
-        <button id="voiceBtn" class="voice-wave">🎙️</button>
         <button id="sendBtn">Send</button>
+        <button id="voiceBtn">🎙️</button>
     </div>
 
-    <!-- Voice Chat Container -->
-    <div id="voice-container">
-        <div class="close-btn">×</div>
-        <div class="voice-wave" id="voice-toggle">🎙️</div>
-        <div id="voice-status">Click to start speaking</div>
+    <!-- Voice Chat Page -->
+    <div id="voice-page">
+        <h1>Voice Chat</h1>
+        <button id="closeVoiceBtn">Close</button>
     </div>
 
-    <!-- Azure Speech SDK -->
-    <script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
-    
     <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Azure Speech SDK -->
+    <script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
 
     <script>
         // =====================
-        // Configuration
+        // Supabase Configuration
         // =====================
-        const AZURE_KEY = 'CSPdFdwXsQ2cnL9dtd0qNONQHv6IMGoT6nqlDwAKyjlLmFApkrbAJQQJ99ALACYeBjFXJ3w3AAAYACOGq0mA';
-        const AZURE_REGION = 'eastus';
         const SUPABASE_URL = 'https://oqcycwaazetgawmiixno.supabase.co'; // Replace with your Supabase URL
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xY3ljd2FhemV0Z2F3bWlpeG5vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg2OTE0MTksImV4cCI6MjA1NDI2NzQxOX0.5FTpXSmWnrr6zSzSBe2YK5ElruCGljGO9V-ZxXudqZE'; // Replace with your Supabase Public API Key
         
-        const VOICE_NAME = 'en-US-SaraNeural';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         // =====================
-        // Initialize Services
+        // Azure Configuration
         // =====================
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        let speechRecognizer, speechSynthesizer;
-        let isListening = false;
+        const AZURE_KEY = 'CSPdFdwXsQ2cnL9dtd0qNONQHv6IMGoT6nqlDwAKyjlLmFApkrbAJQQJ99ALACYeBjFXJ3w3AAAYACOGq0mA';
+        const AZURE_REGION = 'eastus';
+        let speechRecognizer;
+        let speechSynthesizer;
+
+        // =====================
+        // App State
+        // =====================
         let userId = localStorage.getItem('userId');
         let conversationHistory = [];
+        let loadingIndicator = null;
+
+        // =====================
+        // Load Conversation History
+        // =====================
+        const loadConversation = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('conversations')
+                    .select('history')
+                    .eq('user_id', userId)
+                    .single();
+
+                if (data) {
+                    conversationHistory = data.history;
+                    renderConversation();
+                } else {
+                    conversationHistory = [{
+                        role: "system",
+                        content: "You are a Girl Best friend that help with life problems and any other problems"
+                    }];
+                }
+            } catch (error) {
+                console.error("Error loading conversation:", error);
+            }
+        };
+
+        // =====================
+        // Save Conversation History
+        // =====================
+        const saveConversation = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('conversations')
+                    .upsert([
+                        { user_id: userId, history: conversationHistory }
+                    ], { onConflict: 'user_id' });
+
+                if (error) throw error;
+            } catch (error) {
+                console.error("Error saving conversation:", error);
+            }
+        };
+
+        // =====================
+        // Show Loading Indicator
+        // =====================
+        const showLoading = () => {
+            const chatContainer = document.getElementById('chat-container');
+            
+            loadingIndicator = document.createElement('div');
+            loadingIndicator.classList.add('loading-bubble');
+            loadingIndicator.innerHTML = `
+                <div class="loading-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            `;
+            
+            chatContainer.appendChild(loadingIndicator);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        };
+
+        // =====================
+        // Hide Loading Indicator
+        // =====================
+        const hideLoading = () => {
+            if (loadingIndicator) {
+                loadingIndicator.remove();
+                loadingIndicator = null;
+            }
+        };
+
+        // =====================
+        // Render Conversation
+        // =====================
+        const renderConversation = () => {
+            const chatContainer = document.getElementById('chat-container');
+            chatContainer.innerHTML = '';
+
+            conversationHistory.forEach((message) => {
+                if (message.role === 'system') return;
+
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('message');
+                messageDiv.classList.add(message.role === 'user' ? 'user' : 'assistant');
+                messageDiv.textContent = message.content;
+                chatContainer.appendChild(messageDiv);
+            });
+
+            chatContainer.scrollTo({
+                top: chatContainer.scrollHeight,
+                behavior: 'smooth'
+            });
+        };
+
+        // =====================
+        // OpenRouter API Call
+        // =====================
+        const sendMessage = async (message) => {
+            try {
+                // Add user message
+                conversationHistory.push({ role: "user", content: message });
+                renderConversation();
+
+                // Show loading indicator
+                showLoading();
+
+                // API call
+                const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer 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',
+                        'Content-Type': 'application/json',
+                        'HTTP-Referer': window.location.href,
+                        'X-Title': 'Elih Assistant'
+                    },
+                    body: JSON.stringify({
+                        model: "meta-llama/llama-3.2-11b-vision-instruct:free",
+                        messages: conversationHistory
+                    })
+                });
+
+                if (!response.ok) throw new Error(`API Error: ${response.status}`);
+
+                const data = await response.json();
+                const aiReply = data.choices[0].message.content;
+
+                // Add AI response
+                conversationHistory.push({ role: "assistant", content: aiReply });
+                await saveConversation();
+                
+                // Update UI
+                hideLoading();
+                renderConversation();
+
+                // Speak the response
+                if (speechSynthesizer) {
+                    speak(aiReply);
+                }
+
+            } catch (error) {
+                console.error("API Error:", error);
+                hideLoading();
+                alert("Error: " + error.message);
+            }
+        };
+
+        // =====================
+        // Initialize App
+        // =====================
+        const initializeApp = async () => {
+            await loadConversation();
+            document.getElementById('sendBtn').addEventListener('click', () => {
+                const userInput = document.getElementById('userInput').value.trim();
+                if (userInput) sendMessage(userInput);
+            });
+            
+            // Enter key support
+            document.getElementById('userInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    const userInput = document.getElementById('userInput').value.trim();
+                    if (userInput) sendMessage(userInput);
+                }
+            });
+
+            // Voice chat button
+            document.getElementById('voiceBtn').addEventListener('click', () => {
+                document.getElementById('chat-container').style.display = 'none';
+                document.getElementById('input-container').style.display = 'none';
+                document.getElementById('voice-page').style.display = 'flex';
+                startVoiceChat();
+            });
+
+            // Close voice chat button
+            document.getElementById('closeVoiceBtn').addEventListener('click', () => {
+                document.getElementById('chat-container').style.display = 'block';
+                document.getElementById('input-container').style.display = 'flex';
+                document.getElementById('voice-page').style.display = 'none';
+                stopVoiceChat();
+            });
+        };
 
         // =====================
         // Voice Chat Functions
         // =====================
-        async function initializeSpeechServices() {
+        const startVoiceChat = () => {
             const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(AZURE_KEY, AZURE_REGION);
             speechConfig.speechRecognitionLanguage = 'en-US';
-            
-            // Initialize recognizer
+
             const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
             speechRecognizer = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
 
-            // Initialize synthesizer
-            speechSynthesizer = new SpeechSDK.SpeechSynthesizer(speechConfig);
-        }
-
-        function startContinuousRecognition() {
             speechRecognizer.recognizing = (s, e) => {
-                document.getElementById('voice-status').textContent = "Listening...";
+                console.log("Recognizing:", e.result.text);
             };
 
-            speechRecognizer.recognized = async (s, e) => {
+            speechRecognizer.recognized = (s, e) => {
                 if (e.result.text) {
-                    document.getElementById('voice-status').textContent = "Processing...";
-                    await processVoiceInput(e.result.text);
+                    sendMessage(e.result.text);
                 }
             };
 
             speechRecognizer.startContinuousRecognitionAsync();
-        }
 
-        async function processVoiceInput(text) {
-            // Add user message
-            addMessage(text, 'user');
-            
-            // Get AI response
-            const aiResponse = await getAIResponse(text);
-            
-            // Add AI message
-            addMessage(aiResponse, 'assistant');
-            
-            // Speak the response
-            speechSynthesizer.speakTextAsync(aiResponse);
-        }
+            // Initialize speech synthesizer
+            speechSynthesizer = new SpeechSDK.SpeechSynthesizer(speechConfig);
+        };
 
-        // =====================
-        // UI Functions
-        // =====================
-        function toggleVoiceChat() {
-            const voiceContainer = document.getElementById('voice-container');
-            if (voiceContainer.style.display === 'none') {
-                voiceContainer.style.display = 'flex';
-                initializeSpeechServices().then(startContinuousRecognition);
-            } else {
-                voiceContainer.style.display = 'none';
+        const stopVoiceChat = () => {
+            if (speechRecognizer) {
                 speechRecognizer.stopContinuousRecognitionAsync();
             }
+        };
+
+        const speak = (text) => {
+            const ssml = `
+                <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">
+                    <voice name="en-US-AshleyNeural">
+                        <prosody rate="medium" pitch="default">${text}</prosody>
+                    </voice>
+                </speak>
+            `;
+            speechSynthesizer.speakSsmlAsync(ssml);
+        };
+
+        if (userId) {
+            initializeApp();
         }
-
-        function addMessage(content, role) {
-            const chatContainer = document.getElementById('chat-container');
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message', role);
-            messageDiv.textContent = content;
-            chatContainer.appendChild(messageDiv);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
-
-        // =====================
-        // Event Listeners
-        // =====================
-        document.getElementById('voiceBtn').addEventListener('click', toggleVoiceChat);
-        document.querySelector('.close-btn').addEventListener('click', toggleVoiceChat);
-        document.getElementById('sendBtn').addEventListener('click', async () => {
-            const input = document.getElementById('userInput').value.trim();
-            if (input) {
-                addMessage(input, 'user');
-                document.getElementById('userInput').value = '';
-                const response = await getAIResponse(input);
-                addMessage(response, 'assistant');
-            }
-        });
-
-        // =====================
-        // Core Functions
-        // =====================
-        async function getAIResponse(input) {
-            conversationHistory.push({ role: "user", content: input });
-            
-            // Show loading with dynamic timing
-            const loadingTime = Math.max(1000, Math.min(5000, input.length * 50));
-            showLoading(loadingTime);
-
-            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer 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',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: "meta-llama/llama-3.2-11b-vision-instruct:free",
-                    messages: conversationHistory
-                })
-            });
-
-            const data = await response.json();
-            const aiResponse = data.choices[0].message.content;
-            
-            conversationHistory.push({ role: "assistant", content: aiResponse });
-            await supabase.from('conversations').upsert({ user_id: userId, history: conversationHistory });
-            
-            return aiResponse;
-        }
-
-        function showLoading(duration) {
-            const loading = document.createElement('div');
-            loading.className = 'loading-bubble';
-            loading.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
-            document.getElementById('chat-container').appendChild(loading);
-            
-            setTimeout(() => {
-                loading.remove();
-            }, duration);
-        }
-
-        // =====================
-        // Initialization
-        // =====================
-        (async () => {
-            if (userId) {
-                const { data } = await supabase.from('conversations').select('history').eq('user_id', userId).single();
-                conversationHistory = data?.history || [];
-            } else {
-                userId = 'user-' + Math.random().toString(36).substr(2, 9);
-                localStorage.setItem('userId', userId);
-            }
-        })();
     </script>
 </body>
 </html>
