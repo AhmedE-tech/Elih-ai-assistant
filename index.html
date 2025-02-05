@@ -13,7 +13,14 @@
             display: flex;
             flex-direction: column;
             height: 100vh;
-            background: #f5f5f5;
+            background: #ffffff;
+            color: #333;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark-mode {
+            background: #1e1e1e;
+            color: #f5f5f5;
         }
 
         /* Chat Container */
@@ -23,7 +30,7 @@
             flex-direction: column;
             padding: 20px;
             overflow-y: auto;
-            background: #ffffff;
+            background: inherit;
         }
 
         /* Message Bubbles */
@@ -33,40 +40,55 @@
             padding: 12px 16px;
             border-radius: 12px;
             position: relative;
-            opacity: 0;
-            transform: translateY(20px);
-            animation: messageAppear 0.3s ease-out forwards;
-        }
-
-        @keyframes messageAppear {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
         }
 
         .user {
             background: #007bff;
             color: white;
             align-self: flex-end;
-            animation-delay: 0.1s;
         }
 
         .assistant {
             background: #e9ecef;
             color: #333;
             align-self: flex-start;
-            animation-delay: 0.1s;
+        }
+
+        body.dark-mode .assistant {
+            background: #333;
+            color: #f5f5f5;
+        }
+
+        /* Reactions */
+        .reactions {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .reaction {
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.2s ease;
+        }
+
+        .reaction:hover {
+            transform: scale(1.2);
         }
 
         /* Loading Indicator */
         .loading-bubble {
             display: inline-block;
-            padding: 12px 16px;
+            padding: 8px 12px;
             border-radius: 12px;
             background: #e9ecef;
             align-self: flex-start;
             margin: 10px;
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+
+        body.dark-mode .loading-bubble {
+            background: #333;
         }
 
         .loading-dots {
@@ -75,20 +97,16 @@
 
         .loading-dots span {
             display: inline-block;
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
             margin: 0 2px;
             background: #6c757d;
             border-radius: 50%;
             animation: bounce 1.4s infinite ease-in-out;
         }
 
-        .loading-dots span:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-
-        .loading-dots span:nth-child(3) {
-            animation-delay: 0.4s;
+        body.dark-mode .loading-dots span {
+            background: #f5f5f5;
         }
 
         @keyframes bounce {
@@ -96,7 +114,16 @@
                 transform: translateY(0);
             }
             40% {
-                transform: translateY(-8px);
+                transform: translateY(-6px);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
             }
         }
 
@@ -104,7 +131,7 @@
         #input-container {
             display: flex;
             padding: 20px;
-            background: #ffffff;
+            background: inherit;
             border-top: 1px solid #ddd;
             box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
         }
@@ -117,6 +144,8 @@
             font-size: 16px;
             margin-right: 10px;
             transition: border-color 0.3s ease;
+            background: inherit;
+            color: inherit;
         }
 
         #userInput:focus {
@@ -146,6 +175,29 @@
             transform: scale(0.95);
         }
 
+        /* Theme Toggle */
+        #theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            transition: background 0.3s ease;
+        }
+
+        #theme-toggle:hover {
+            background: #0056b3;
+        }
+
         /* Responsive Design */
         @media (max-width: 480px) {
             .message {
@@ -155,6 +207,9 @@
     </style>
 </head>
 <body>
+    <!-- Theme Toggle -->
+    <button id="theme-toggle">🌓</button>
+
     <!-- Chat Container -->
     <div id="chat-container">
         <!-- Messages will be dynamically added here -->
@@ -271,6 +326,21 @@
                 messageDiv.classList.add('message');
                 messageDiv.classList.add(message.role === 'user' ? 'user' : 'assistant');
                 messageDiv.textContent = message.content;
+
+                // Add reactions (if any)
+                if (message.reactions) {
+                    const reactionsDiv = document.createElement('div');
+                    reactionsDiv.classList.add('reactions');
+                    message.reactions.forEach((reaction) => {
+                        const reactionSpan = document.createElement('span');
+                        reactionSpan.classList.add('reaction');
+                        reactionSpan.textContent = reaction;
+                        reactionSpan.onclick = () => addReaction(message, reaction);
+                        reactionsDiv.appendChild(reactionSpan);
+                    });
+                    messageDiv.appendChild(reactionsDiv);
+                }
+
                 chatContainer.appendChild(messageDiv);
             });
 
@@ -278,6 +348,18 @@
                 top: chatContainer.scrollHeight,
                 behavior: 'smooth'
             });
+        };
+
+        // =====================
+        // Add Reaction
+        // =====================
+        const addReaction = async (message, reaction) => {
+            if (!message.reactions) message.reactions = [];
+            if (!message.reactions.includes(reaction)) {
+                message.reactions.push(reaction);
+                await saveConversation();
+                renderConversation();
+            }
         };
 
         // =====================
@@ -316,6 +398,10 @@
                 const data = await response.json();
                 const aiReply = data.choices[0].message.content;
 
+                // Simulate typing delay based on response length
+                const typingDelay = Math.min(aiReply.length * 50, 3000); // Max 3 seconds
+                await new Promise((resolve) => setTimeout(resolve, typingDelay));
+
                 // Add AI response
                 conversationHistory.push({ role: "assistant", content: aiReply });
                 await saveConversation();
@@ -330,6 +416,22 @@
                 alert("Error: " + error.message);
             }
         };
+
+        // =====================
+        // Theme Toggle
+        // =====================
+        const toggleTheme = () => {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+        };
+
+        // Initialize theme
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-mode');
+        }
+
+        document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
 
         // =====================
         // Initialize App
