@@ -14,6 +14,12 @@
             flex-direction: column;
             height: 100vh;
             background: #f5f5f5;
+            transition: background 0.3s ease;
+        }
+
+        body.dark-mode {
+            background: #1e1e1e;
+            color: #ffffff;
         }
 
         /* Chat Container */
@@ -24,6 +30,11 @@
             padding: 20px;
             overflow-y: auto;
             background: #ffffff;
+            transition: background 0.3s ease;
+        }
+
+        body.dark-mode #chat-container {
+            background: #2d2d2d;
         }
 
         /* Message Bubbles */
@@ -33,6 +44,16 @@
             padding: 12px 16px;
             border-radius: 12px;
             position: relative;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: messageAppear 0.3s ease-out forwards;
+        }
+
+        @keyframes messageAppear {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .user {
@@ -47,15 +68,9 @@
             align-self: flex-start;
         }
 
-        /* Voice Message Bubbles */
-        .voice-message {
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-        }
-
-        .voice-message audio {
-            margin-left: 10px;
+        body.dark-mode .assistant {
+            background: #444;
+            color: #fff;
         }
 
         /* Loading Indicator */
@@ -66,6 +81,10 @@
             background: #e9ecef;
             align-self: flex-start;
             margin: 10px;
+        }
+
+        body.dark-mode .loading-bubble {
+            background: #444;
         }
 
         .loading-dots {
@@ -82,12 +101,8 @@
             animation: bounce 1.4s infinite ease-in-out;
         }
 
-        .loading-dots span:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-
-        .loading-dots span:nth-child(3) {
-            animation-delay: 0.4s;
+        body.dark-mode .loading-dots span {
+            background: #888;
         }
 
         @keyframes bounce {
@@ -106,6 +121,12 @@
             background: #ffffff;
             border-top: 1px solid #ddd;
             box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+            transition: background 0.3s ease;
+        }
+
+        body.dark-mode #input-container {
+            background: #2d2d2d;
+            border-color: #444;
         }
 
         #userInput {
@@ -115,7 +136,13 @@
             border-radius: 8px;
             font-size: 16px;
             margin-right: 10px;
-            transition: border-color 0.3s ease;
+            transition: border-color 0.3s ease, background 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark-mode #userInput {
+            background: #444;
+            border-color: #666;
+            color: #fff;
         }
 
         #userInput:focus {
@@ -124,8 +151,8 @@
             box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
         }
 
-        #sendBtn, #voiceBtn {
-            padding: 12px;
+        #sendBtn {
+            padding: 12px 20px;
             background: #007bff;
             color: white;
             border: none;
@@ -133,15 +160,56 @@
             font-size: 16px;
             cursor: pointer;
             transition: all 0.3s ease;
-            margin-left: 10px;
+            transform: scale(1);
         }
 
-        #sendBtn:hover, #voiceBtn:hover {
+        #sendBtn:hover {
             background: #0056b3;
+            transform: scale(1.05);
         }
 
-        #sendBtn:active, #voiceBtn:active {
+        #sendBtn:active {
             transform: scale(0.95);
+        }
+
+        /* Reaction Emojis */
+        .reactions {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .reaction {
+            cursor: pointer;
+            font-size: 18px;
+            transition: transform 0.2s ease;
+        }
+
+        .reaction:hover {
+            transform: scale(1.2);
+        }
+
+        /* Theme Toggle */
+        #theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: background 0.3s ease;
+        }
+
+        #theme-toggle:hover {
+            background: #0056b3;
         }
 
         /* Responsive Design */
@@ -153,6 +221,9 @@
     </style>
 </head>
 <body>
+    <!-- Theme Toggle -->
+    <button id="theme-toggle">🌓</button>
+
     <!-- Chat Container -->
     <div id="chat-container">
         <!-- Messages will be dynamically added here -->
@@ -162,13 +233,13 @@
     <div id="input-container">
         <input type="text" id="userInput" placeholder="Type your message...">
         <button id="sendBtn">Send</button>
-        <button id="voiceBtn">🎤</button>
     </div>
 
     <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Azure Speech SDK -->
-    <script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
+
+    <!-- Typing Sound -->
+    <audio id="typing-sound" src="https://assets.mixkit.co/active_storage/sfx/2851/2851-preview.mp3"></audio>
 
     <script>
         // =====================
@@ -180,76 +251,35 @@
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         // =====================
-        // Azure Configuration
-        // =====================
-        const AZURE_KEY = 'CSPdFdwXsQ2cnL9dtd0qNONQHv6IMGoT6nqlDwAKyjlLmFApkrbAJQQJ99ALACYeBjFXJ3w3AAAYACOGq0mA';
-        const AZURE_REGION = 'eastus';
-
-        // =====================
         // App State
         // =====================
         let userId = localStorage.getItem('userId');
         let conversationHistory = [];
         let loadingIndicator = null;
-        let recognizer = null;
+        let isDarkMode = localStorage.getItem('darkMode') === 'true';
 
         // =====================
-        // Initialize Azure Speech
+        // Initialize App
         // =====================
-        const initializeSpeech = async () => {
-            const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(AZURE_KEY, AZURE_REGION);
-            speechConfig.speechRecognitionLanguage = "en-US";
-
-            const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
-            recognizer = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
-        };
-
-        // =====================
-        // Start Voice Recording
-        // =====================
-        const startRecording = () => {
-            recognizer.startContinuousRecognitionAsync(
-                () => console.log("Recording started..."),
-                (err) => console.error("Recording error:", err)
-            );
-        };
-
-        // =====================
-        // Stop Voice Recording
-        // =====================
-        const stopRecording = () => {
-            recognizer.stopContinuousRecognitionAsync(
-                () => console.log("Recording stopped..."),
-                (err) => console.error("Stop error:", err)
-            );
-        };
-
-        // =====================
-        // Convert Text to Speech (Azure)
-        // =====================
-        const textToSpeech = async (text) => {
-            const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(AZURE_KEY, AZURE_REGION);
-            speechConfig.speechSynthesisVoiceName = "en-US-AshleyNeural";
-
-            const synthesizer = new SpeechSDK.SpeechSynthesizer(speechConfig);
-
-            return new Promise((resolve, reject) => {
-                synthesizer.speakTextAsync(
-                    text,
-                    (result) => {
-                        if (result) {
-                            const audioData = new Blob([result.audioData], { type: 'audio/wav' });
-                            resolve(URL.createObjectURL(audioData));
-                        }
-                        synthesizer.close();
-                    },
-                    (err) => {
-                        console.error("Text-to-Speech error:", err);
-                        synthesizer.close();
-                        reject(err);
-                    }
-                );
+        const initializeApp = async () => {
+            await loadConversation();
+            document.getElementById('sendBtn').addEventListener('click', sendMessage);
+            document.getElementById('userInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') sendMessage();
             });
+
+            // Set theme
+            document.body.classList.toggle('dark-mode', isDarkMode);
+            document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+        };
+
+        // =====================
+        // Theme Toggle
+        // =====================
+        const toggleTheme = () => {
+            isDarkMode = !isDarkMode;
+            document.body.classList.toggle('dark-mode', isDarkMode);
+            localStorage.setItem('darkMode', isDarkMode);
         };
 
         // =====================
@@ -297,7 +327,7 @@
         // =====================
         // Show Loading Indicator
         // =====================
-        const showLoading = (duration) => {
+        const showLoading = () => {
             const chatContainer = document.getElementById('chat-container');
             
             loadingIndicator = document.createElement('div');
@@ -313,9 +343,8 @@
             chatContainer.appendChild(loadingIndicator);
             chatContainer.scrollTop = chatContainer.scrollHeight;
 
-            setTimeout(() => {
-                hideLoading();
-            }, duration);
+            // Play typing sound
+            document.getElementById('typing-sound').play();
         };
 
         // =====================
@@ -326,6 +355,10 @@
                 loadingIndicator.remove();
                 loadingIndicator = null;
             }
+
+            // Stop typing sound
+            document.getElementById('typing-sound').pause();
+            document.getElementById('typing-sound').currentTime = 0;
         };
 
         // =====================
@@ -341,14 +374,19 @@
                 const messageDiv = document.createElement('div');
                 messageDiv.classList.add('message');
                 messageDiv.classList.add(message.role === 'user' ? 'user' : 'assistant');
+                messageDiv.textContent = message.content;
 
-                if (message.audioUrl) {
-                    messageDiv.classList.add('voice-message');
-                    messageDiv.innerHTML = `
-                        <audio controls src="${message.audioUrl}"></audio>
-                    `;
-                } else {
-                    messageDiv.textContent = message.content;
+                // Add reactions
+                if (message.reactions) {
+                    const reactionsDiv = document.createElement('div');
+                    reactionsDiv.classList.add('reactions');
+                    message.reactions.forEach(reaction => {
+                        const reactionSpan = document.createElement('span');
+                        reactionSpan.classList.add('reaction');
+                        reactionSpan.textContent = reaction;
+                        reactionsDiv.appendChild(reactionSpan);
+                    });
+                    messageDiv.appendChild(reactionsDiv);
                 }
 
                 chatContainer.appendChild(messageDiv);
@@ -363,15 +401,22 @@
         // =====================
         // OpenRouter API Call
         // =====================
-        const sendMessage = async (message) => {
+        const sendMessage = async () => {
+            const userInput = document.getElementById('userInput').value.trim();
+            if (!userInput) return;
+
             try {
                 // Add user message
-                conversationHistory.push({ role: "user", content: message });
+                conversationHistory.push({ role: "user", content: userInput });
                 renderConversation();
+                document.getElementById('userInput').value = '';
 
                 // Show loading indicator
-                const loadingDuration = Math.min(message.length * 50, 5000); // Dynamic loading time
-                showLoading(loadingDuration);
+                showLoading();
+
+                // Simulate random delay
+                const delay = Math.random() * 2000 + 1000; // 1-3 seconds
+                await new Promise(resolve => setTimeout(resolve, delay));
 
                 // API call
                 const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -393,14 +438,12 @@
                 const data = await response.json();
                 const aiReply = data.choices[0].message.content;
 
-                // Convert AI response to speech
-                const audioUrl = await textToSpeech(aiReply);
-
                 // Add AI response
-                conversationHistory.push({ role: "assistant", content: aiReply, audioUrl });
+                conversationHistory.push({ role: "assistant", content: aiReply });
                 await saveConversation();
                 
                 // Update UI
+                hideLoading();
                 renderConversation();
 
             } catch (error) {
@@ -408,40 +451,6 @@
                 hideLoading();
                 alert("Error: " + error.message);
             }
-        };
-
-        // =====================
-        // Initialize App
-        // =====================
-        const initializeApp = async () => {
-            await loadConversation();
-            await initializeSpeech();
-
-            // Text message send
-            document.getElementById('sendBtn').addEventListener('click', () => {
-                const message = document.getElementById('userInput').value.trim();
-                if (message) sendMessage(message);
-                document.getElementById('userInput').value = '';
-            });
-
-            // Voice message send
-            document.getElementById('voiceBtn').addEventListener('mousedown', startRecording);
-            document.getElementById('voiceBtn').addEventListener('mouseup', () => {
-                stopRecording();
-                recognizer.recognized = (_, event) => {
-                    const message = event.result.text;
-                    if (message) sendMessage(message);
-                };
-            });
-
-            // Enter key support
-            document.getElementById('userInput').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    const message = document.getElementById('userInput').value.trim();
-                    if (message) sendMessage(message);
-                    document.getElementById('userInput').value = '';
-                }
-            });
         };
 
         if (userId) {
