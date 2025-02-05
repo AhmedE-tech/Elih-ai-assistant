@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elih - AI Assistant</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* General Styles */
         body {
             font-family: 'Arial', sans-serif;
             margin: 0;
@@ -14,15 +14,8 @@
             flex-direction: column;
             height: 100vh;
             background: #f5f5f5;
-            transition: background 0.3s ease;
         }
-
-        body.dark-mode {
-            background: #1e1e1e;
-            color: #ffffff;
-        }
-
-        /* Chat Container */
+        
         #chat-container {
             flex: 1;
             display: flex;
@@ -30,534 +23,118 @@
             padding: 20px;
             overflow-y: auto;
             background: #ffffff;
-            transition: background 0.3s ease;
         }
-
-        body.dark-mode #chat-container {
-            background: #2d2d2d;
-        }
-
-        /* Message Bubbles */
+        
         .message {
             max-width: 70%;
             margin: 10px;
             padding: 12px 16px;
             border-radius: 12px;
-            position: relative;
-            opacity: 0;
-            transform: translateY(20px);
-            animation: messageAppear 0.3s ease-out forwards;
         }
-
-        @keyframes messageAppear {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .user {
-            background: #007bff;
-            color: white;
-            align-self: flex-end;
-        }
-
-        .assistant {
-            background: #e9ecef;
-            color: #333;
-            align-self: flex-start;
-        }
-
-        body.dark-mode .assistant {
-            background: #3d3d3d;
-            color: #ffffff;
-        }
-
-        /* Loading Indicator */
-        .loading-bubble {
-            display: inline-block;
-            padding: 12px 16px;
-            border-radius: 12px;
-            background: #e9ecef;
-            align-self: flex-start;
-            margin: 10px;
-        }
-
-        body.dark-mode .loading-bubble {
-            background: #3d3d3d;
-        }
-
-        .loading-dots {
-            display: inline-block;
-        }
-
-        .loading-dots span {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            margin: 0 2px;
-            background: #6c757d;
-            border-radius: 50%;
-            animation: bounce 1.4s infinite ease-in-out;
-        }
-
-        @keyframes bounce {
-            0%, 80%, 100% { 
-                transform: translateY(0);
-            }
-            40% {
-                transform: translateY(-8px);
-            }
-        }
-
-        /* Input Container */
+        
+        .user { background: #007bff; color: white; align-self: flex-end; }
+        .assistant { background: #e9ecef; color: #333; align-self: flex-start; }
+        
         #input-container {
             display: flex;
-            padding: 20px;
+            padding: 15px;
             background: #ffffff;
             border-top: 1px solid #ddd;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-            transition: background 0.3s ease;
         }
-
-        body.dark-mode #input-container {
-            background: #2d2d2d;
-            border-color: #444;
-        }
-
+        
         #userInput {
             flex: 1;
-            padding: 12px;
+            padding: 10px;
             border: 1px solid #ddd;
             border-radius: 8px;
             font-size: 16px;
             margin-right: 10px;
-            transition: all 0.3s ease;
         }
-
-        body.dark-mode #userInput {
-            background: #3d3d3d;
-            border-color: #555;
-            color: #ffffff;
-        }
-
-        #userInput:focus {
-            outline: none;
-            border-color: #007bff;
-            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-        }
-
-        #sendBtn {
-            padding: 12px 20px;
-            background: #007bff;
-            color: white;
+        
+        #sendBtn, #voiceBtn {
+            padding: 12px;
             border: none;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 18px;
             cursor: pointer;
-            transition: all 0.3s ease;
         }
-
-        #sendBtn:hover {
-            background: #0056b3;
-        }
-
-        /* Voice Chat Interface */
+        
+        #sendBtn { background: #007bff; color: white; }
+        #voiceBtn { background: #28a745; color: white; margin-left: 5px; }
+        
         #voice-chat-container {
             display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 20px;
         }
-
-        #voice-chat-container.active {
-            display: flex;
-        }
-
-        #voice-input {
-            margin-bottom: 20px;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            width: 80%;
-            text-align: center;
-            transition: all 0.3s ease;
-        }
-
-        body.dark-mode #voice-input {
-            background: #3d3d3d;
-            border-color: #555;
-            color: #ffffff;
-        }
-
-        #voice-input:focus {
-            outline: none;
-            border-color: #007bff;
-            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-        }
-
-        #voice-button {
-            padding: 12px 20px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        #voice-button:hover {
-            background: #0056b3;
-        }
-
-        /* Toggle Buttons */
-        .toggle-buttons {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-
-        .toggle-buttons button {
-            padding: 10px 20px;
-            margin: 0 10px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .toggle-buttons button:hover {
-            background: #0056b3;
-        }
-
-        /* Light/Dark Mode Toggle */
-        #mode-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 10px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        #mode-toggle:hover {
-            background: #0056b3;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 480px) {
-            .message {
-                max-width: 85%;
-            }
-        }
+        
+        #close-voice { position: absolute; top: 20px; right: 20px; font-size: 24px; cursor: pointer; }
     </style>
 </head>
 <body>
-    <!-- Light/Dark Mode Toggle -->
-    <button id="mode-toggle">Toggle Dark Mode</button>
-
-    <!-- Toggle Buttons -->
-    <div class="toggle-buttons">
-        <button id="text-chat-btn">Text Chat</button>
-        <button id="voice-chat-btn">Voice Chat</button>
-    </div>
-
-    <!-- Text Chat Container -->
-    <div id="chat-container">
-        <!-- Messages will be dynamically added here -->
-    </div>
-
-    <!-- Input Container -->
+    <div id="chat-container"></div>
+    
     <div id="input-container">
         <input type="text" id="userInput" placeholder="Type your message...">
         <button id="sendBtn">Send</button>
+        <button id="voiceBtn"><i class="fas fa-microphone"></i></button>
     </div>
-
-    <!-- Voice Chat Container -->
+    
     <div id="voice-chat-container">
-        <input type="text" id="voice-input" placeholder="Click the button and speak...">
-        <button id="voice-button">Start Voice Chat</button>
+        <span id="close-voice">&times;</span>
+        <h2>Listening...</h2>
     </div>
-
-    <!-- Supabase SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Azure Speech SDK -->
+    
     <script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
-
     <script>
-        // =====================
-        // Supabase Configuration
-        // =====================
-        const SUPABASE_URL = 'https://oqcycwaazetgawmiixno.supabase.co'; // Replace with your Supabase URL
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xY3ljd2FhemV0Z2F3bWlpeG5vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg2OTE0MTksImV4cCI6MjA1NDI2NzQxOX0.5FTpXSmWnrr6zSzSBe2YK5ElruCGljGO9V-ZxXudqZE'; // Replace with your Supabase Public API Key
+        let speechConfig, recognizer;
         
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        // =====================
-        // Azure Speech Configuration
-        // =====================
-        const AZURE_KEY = 'CSPdFdwXsQ2cnL9dtd0qNONQHv6IMGoT6nqlDwAKyjlLmFApkrbAJQQJ99ALACYeBjFXJ3w3AAAYACOGq0mA';
-        const AZURE_REGION = 'eastus';
-        const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(AZURE_KEY, AZURE_REGION);
-        speechConfig.speechSynthesisVoiceName = 'en-US-SaraNeural'; // Set voice
-
-        // =====================
-        // App State
-        // =====================
-        let userId = localStorage.getItem('userId');
-        let conversationHistory = [];
-        let loadingIndicator = null;
-        let recognizer = null;
-        let synthesizer = null;
-
-        // =====================
-        // Initialize Azure Speech
-        // =====================
         const initializeSpeech = () => {
-            const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
-            recognizer = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
-            synthesizer = new SpeechSDK.SpeechSynthesizer(speechConfig);
+            speechConfig = SpeechSDK.SpeechConfig.fromSubscription('CSPdFdwXsQ2cnL9dtd0qNONQHv6IMGoT6nqlDwAKyjlLmFApkrbAJQQJ99ALACYeBjFXJ3w3AAAYACOGq0mA', 'eastus');
+            speechConfig.speechRecognitionLanguage = 'en-US';
+            recognizer = new SpeechSDK.SpeechRecognizer(speechConfig, SpeechSDK.AudioConfig.fromDefaultMicrophoneInput());
         };
-
-        // =====================
-        // Start Voice Recognition
-        // =====================
-        const startVoiceRecognition = () => {
-            recognizer.recognizeOnceAsync(
-                (result) => {
-                    const userInput = result.text;
-                    document.getElementById('voice-input').value = userInput;
-                    sendMessage(userInput, true);
-                },
-                (error) => {
-                    console.error("Voice recognition error:", error);
+        
+        const startContinuousRecognition = () => {
+            document.getElementById('voice-chat-container').style.display = 'flex';
+            recognizer.startContinuousRecognitionAsync();
+            recognizer.recognized = (s, e) => {
+                if (e.result.text) {
+                    document.getElementById('userInput').value = e.result.text;
+                    sendMessage(e.result.text);
                 }
-            );
+            };
         };
-
-        // =====================
-        // Synthesize Speech
-        // =====================
-        const synthesizeSpeech = (text) => {
-            synthesizer.speakTextAsync(
-                text,
-                () => console.log("Speech synthesized successfully"),
-                (error) => console.error("Speech synthesis error:", error)
-            );
-        };
-
-        // =====================
-        // Load Conversation History
-        // =====================
-        const loadConversation = async () => {
-            try {
-                const { data, error } = await supabase
-                    .from('conversations')
-                    .select('history')
-                    .eq('user_id', userId)
-                    .single();
-
-                if (data) {
-                    conversationHistory = data.history;
-                    renderConversation();
-                } else {
-                    conversationHistory = [{
-                        role: "system",
-                        content: "You are a Girl Best friend that help with life problems and any other problems"
-                    }];
-                }
-            } catch (error) {
-                console.error("Error loading conversation:", error);
-            }
-        };
-
-        // =====================
-        // Save Conversation History
-        // =====================
-        const saveConversation = async () => {
-            try {
-                const { data, error } = await supabase
-                    .from('conversations')
-                    .upsert([
-                        { user_id: userId, history: conversationHistory }
-                    ], { onConflict: 'user_id' });
-
-                if (error) throw error;
-            } catch (error) {
-                console.error("Error saving conversation:", error);
-            }
-        };
-
-        // =====================
-        // Show Loading Indicator
-        // =====================
-        const showLoading = (duration) => {
-            const chatContainer = document.getElementById('chat-container');
-            
-            loadingIndicator = document.createElement('div');
-            loadingIndicator.classList.add('loading-bubble');
-            loadingIndicator.innerHTML = `
-                <div class="loading-dots">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </div>
-            `;
-            
-            chatContainer.appendChild(loadingIndicator);
+        
+        document.getElementById('voiceBtn').addEventListener('click', () => {
+            startContinuousRecognition();
+        });
+        
+        document.getElementById('close-voice').addEventListener('click', () => {
+            document.getElementById('voice-chat-container').style.display = 'none';
+            recognizer.stopContinuousRecognitionAsync();
+        });
+        
+        const sendMessage = (text) => {
+            if (!text) return;
+            let chatContainer = document.getElementById('chat-container');
+            let messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', 'user');
+            messageDiv.textContent = text;
+            chatContainer.appendChild(messageDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
-
-            setTimeout(() => {
-                hideLoading();
-            }, duration);
         };
-
-        // =====================
-        // Hide Loading Indicator
-        // =====================
-        const hideLoading = () => {
-            if (loadingIndicator) {
-                loadingIndicator.remove();
-                loadingIndicator = null;
-            }
-        };
-
-        // =====================
-        // Render Conversation
-        // =====================
-        const renderConversation = () => {
-            const chatContainer = document.getElementById('chat-container');
-            chatContainer.innerHTML = '';
-
-            conversationHistory.forEach((message) => {
-                if (message.role === 'system') return;
-
-                const messageDiv = document.createElement('div');
-                messageDiv.classList.add('message');
-                messageDiv.classList.add(message.role === 'user' ? 'user' : 'assistant');
-                messageDiv.textContent = message.content;
-                chatContainer.appendChild(messageDiv);
-            });
-
-            chatContainer.scrollTo({
-                top: chatContainer.scrollHeight,
-                behavior: 'smooth'
-            });
-        };
-
-        // =====================
-        // OpenRouter API Call
-        // =====================
-        const sendMessage = async (userInput, isVoice = false) => {
-            if (!userInput) return;
-
-            try {
-                // Add user message
-                conversationHistory.push({ role: "user", content: userInput });
-                renderConversation();
-
-                // Show loading indicator
-                const loadingDuration = Math.min(3000, Math.max(1000, userInput.length * 50)); // Dynamic duration
-                showLoading(loadingDuration);
-
-                // API call
-                const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': 'Bearer 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',
-                        'Content-Type': 'application/json',
-                        'HTTP-Referer': window.location.href,
-                        'X-Title': 'Elih Assistant'
-                    },
-                    body: JSON.stringify({
-                        model: "meta-llama/llama-3.2-11b-vision-instruct:free",
-                        messages: conversationHistory
-                    })
-                });
-
-                if (!response.ok) throw new Error(`API Error: ${response.status}`);
-
-                const data = await response.json();
-                const aiReply = data.choices[0].message.content;
-
-                // Add AI response
-                conversationHistory.push({ role: "assistant", content: aiReply });
-                await saveConversation();
-                
-                // Update UI
-                hideLoading();
-                renderConversation();
-
-                // Synthesize speech for voice chat
-                if (isVoice) {
-                    synthesizeSpeech(aiReply);
-                }
-
-            } catch (error) {
-                console.error("API Error:", error);
-                hideLoading();
-                alert("Error: " + error.message);
-            }
-        };
-
-        // =====================
-        // Initialize App
-        // =====================
-        const initializeApp = async () => {
-            await loadConversation();
-            document.getElementById('sendBtn').addEventListener('click', () => {
-                const userInput = document.getElementById('userInput').value.trim();
-                sendMessage(userInput);
-            });
-            
-            // Enter key support
-            document.getElementById('userInput').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    const userInput = document.getElementById('userInput').value.trim();
-                    sendMessage(userInput);
-                }
-            });
-
-            // Voice chat button
-            document.getElementById('voice-button').addEventListener('click', () => {
-                startVoiceRecognition();
-            });
-
-            // Toggle between text and voice chat
-            document.getElementById('text-chat-btn').addEventListener('click', () => {
-                document.getElementById('chat-container').style.display = 'flex';
-                document.getElementById('input-container').style.display = 'flex';
-                document.getElementById('voice-chat-container').style.display = 'none';
-            });
-
-            document.getElementById('voice-chat-btn').addEventListener('click', () => {
-                document.getElementById('chat-container').style.display = 'none';
-                document.getElementById('input-container').style.display = 'none';
-                document.getElementById('voice-chat-container').style.display = 'flex';
-            });
-
-            // Light/Dark mode toggle
-            document.getElementById('mode-toggle').addEventListener('click', () => {
-                document.body.classList.toggle('dark-mode');
-            });
-
-            // Initialize Azure Speech
-            initializeSpeech();
-        };
-
-        if (userId) {
-            initializeApp();
-        }
+        
+        initializeSpeech();
     </script>
 </body>
 </html>
