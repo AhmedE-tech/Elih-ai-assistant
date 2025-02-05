@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Elih - AI Assistant</title>
+    <script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
     <style>
         /* General Styles */
         body {
@@ -13,14 +14,7 @@
             display: flex;
             flex-direction: column;
             height: 100vh;
-            background: #ffffff;
-            color: #333;
-            transition: background 0.3s ease, color 0.3s ease;
-        }
-
-        body.dark-mode {
-            background: #1e1e1e;
-            color: #f5f5f5;
+            background: #f5f5f5;
         }
 
         /* Chat Container */
@@ -30,7 +24,7 @@
             flex-direction: column;
             padding: 20px;
             overflow-y: auto;
-            background: inherit;
+            background: #ffffff;
         }
 
         /* Message Bubbles */
@@ -54,164 +48,34 @@
             align-self: flex-start;
         }
 
-        body.dark-mode .assistant {
-            background: #333;
-            color: #f5f5f5;
-        }
-
-        /* Reactions */
-        .reactions {
+        /* Voice Message Styles */
+        .voice-message {
             display: flex;
-            gap: 5px;
-            margin-top: 5px;
-        }
-
-        .reaction {
-            cursor: pointer;
-            font-size: 14px;
-            transition: transform 0.2s ease;
-        }
-
-        .reaction:hover {
-            transform: scale(1.2);
-        }
-
-        /* Loading Indicator */
-        .loading-bubble {
-            display: inline-block;
+            align-items: center;
             padding: 8px 12px;
-            border-radius: 12px;
-            background: #e9ecef;
-            align-self: flex-start;
-            margin: 10px;
-            animation: pulse 1.5s infinite ease-in-out;
+            border-radius: 20px;
+            background: #f1f3f4;
         }
 
-        body.dark-mode .loading-bubble {
-            background: #333;
-        }
-
-        .loading-dots {
-            display: inline-block;
-        }
-
-        .loading-dots span {
-            display: inline-block;
-            width: 6px;
-            height: 6px;
-            margin: 0 2px;
-            background: #6c757d;
-            border-radius: 50%;
-            animation: bounce 1.4s infinite ease-in-out;
-        }
-
-        body.dark-mode .loading-dots span {
-            background: #f5f5f5;
-        }
-
-        @keyframes bounce {
-            0%, 80%, 100% { 
-                transform: translateY(0);
-            }
-            40% {
-                transform: translateY(-6px);
-            }
-        }
-
-        @keyframes pulse {
-            0%, 100% {
-                transform: scale(1);
-            }
-            50% {
-                transform: scale(1.05);
-            }
+        .play-button {
+            width: 24px;
+            height: 24px;
+            margin-right: 8px;
+            cursor: pointer;
         }
 
         /* Input Container */
         #input-container {
             display: flex;
-            padding: 20px;
-            background: inherit;
-            border-top: 1px solid #ddd;
-            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-        }
-
-        #userInput {
-            flex: 1;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            margin-right: 10px;
-            transition: border-color 0.3s ease;
-            background: inherit;
-            color: inherit;
-        }
-
-        #userInput:focus {
-            outline: none;
-            border-color: #007bff;
-            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-        }
-
-        #sendBtn {
-            padding: 12px 20px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            transform: scale(1);
-        }
-
-        #sendBtn:hover {
-            background: #0056b3;
-            transform: scale(1.05);
-        }
-
-        #sendBtn:active {
-            transform: scale(0.95);
-        }
-
-        /* Theme Toggle */
-        #theme-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
             align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 20px;
-            transition: background 0.3s ease;
-        }
-
-        #theme-toggle:hover {
-            background: #0056b3;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 480px) {
-            .message {
-                max-width: 85%;
-            }
-        }
-        /* Add voice button styles */
-        #voice-controls {
-            display: flex;
+            padding: 10px;
+            background: #ffffff;
+            border-top: 1px solid #ddd;
             gap: 10px;
-            margin-top: 10px;
         }
-        #micButton {
-            padding: 12px;
+
+        #voiceButton {
+            padding: 10px;
             border-radius: 50%;
             border: none;
             background: #007bff;
@@ -219,384 +83,186 @@
             cursor: pointer;
             transition: all 0.3s ease;
         }
-        #micButton.listening {
+
+        #voiceButton.recording {
             background: #dc3545;
-            animation: pulse 1.5s infinite;
+            animation: pulse 1s infinite;
         }
+
         @keyframes pulse {
             0% { transform: scale(1); }
             50% { transform: scale(1.1); }
             100% { transform: scale(1); }
         }
+
+        /* Loading Animation */
+        .loading-dots span {
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-8px); }
+        }
     </style>
 </head>
 <body>
-    
-    <!-- Theme Toggle -->
-    <button id="theme-toggle">🌓</button>
-
-    <!-- Chat Container -->
-    <div id="chat-container">
-        <!-- Messages will be dynamically added here -->
-    </div>
-
-    <!-- Input Container -->
+    <div id="chat-container"></div>
     <div id="input-container">
-        <input type="text" id="userInput" placeholder="Type your message...">
+        <button id="voiceButton">🎤</button>
+        <input type="text" id="userInput" placeholder="Type or record message...">
         <button id="sendBtn">Send</button>
     </div>
 
-    <!-- Supabase SDK -->
+    <!-- Azure and Supabase SDKs -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
     <script>
-        // =====================
-        // Supabase Configuration
-        // =====================
-        const SUPABASE_URL = 'https://oqcycwaazetgawmiixno.supabase.co'; // Replace with your Supabase URL
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xY3ljd2FhemV0Z2F3bWlpeG5vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg2OTE0MTksImV4cCI6MjA1NDI2NzQxOX0.5FTpXSmWnrr6zSzSBe2YK5ElruCGljGO9V-ZxXudqZE'; // Replace with your Supabase Public API Key
+        // Azure Configuration
+        const AZURE_KEY = 'CSPdFdwXsQ2cnL9dtd0qNONQHv6IMGoT6nqlDwAKyjlLmFApkrbAJQQJ99ALACYeBjFXJ3w3AAAYACOGq0mA';
+        const AZURE_REGION = 'eastus';
+        const SYNTHESIS_VOICE = 'en-US-SaraNeural';
         
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        // =====================
-        // App State
-        // =====================
-        let userId = localStorage.getItem('userId');
-        let conversationHistory = [];
-        let loadingIndicator = null;
-
-        // =====================
-        // Load Conversation History
-        // =====================
-        const loadConversation = async () => {
-            try {
-                const { data, error } = await supabase
-                    .from('conversations')
-                    .select('history')
-                    .eq('user_id', userId)
-                    .single();
-
-                if (data) {
-                    conversationHistory = data.history;
-                    renderConversation();
-                } else {
-                    conversationHistory = [{
-                        role: "system",
-                        content: "You are a Girl Best friend that help with life problems and any other problems"
-                    }];
-                }
-            } catch (error) {
-                console.error("Error loading conversation:", error);
-            }
-        };
-
-        // =====================
-        // Save Conversation History
-        // =====================
-        const saveConversation = async () => {
-            try {
-                const { data, error } = await supabase
-                    .from('conversations')
-                    .upsert([
-                        { user_id: userId, history: conversationHistory }
-                    ], { onConflict: 'user_id' });
-
-                if (error) throw error;
-            } catch (error) {
-                console.error("Error saving conversation:", error);
-            }
-        };
-
-        // =====================
-        // Show Loading Indicator
-        // =====================
-        const showLoading = () => {
-            const chatContainer = document.getElementById('chat-container');
-            
-            loadingIndicator = document.createElement('div');
-            loadingIndicator.classList.add('loading-bubble');
-            loadingIndicator.innerHTML = `
-                <div class="loading-dots">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </div>
-            `;
-            
-            chatContainer.appendChild(loadingIndicator);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        };
-
-        // =====================
-        // Hide Loading Indicator
-        // =====================
-        const hideLoading = () => {
-            if (loadingIndicator) {
-                loadingIndicator.remove();
-                loadingIndicator = null;
-            }
-        };
-
-        // =====================
-        // Render Conversation
-        // =====================
-        const renderConversation = () => {
-            const chatContainer = document.getElementById('chat-container');
-            chatContainer.innerHTML = '';
-
-            conversationHistory.forEach((message) => {
-                if (message.role === 'system') return;
-
-                const messageDiv = document.createElement('div');
-                messageDiv.classList.add('message');
-                messageDiv.classList.add(message.role === 'user' ? 'user' : 'assistant');
-                messageDiv.textContent = message.content;
-
-                // Add reactions (if any)
-                if (message.reactions) {
-                    const reactionsDiv = document.createElement('div');
-                    reactionsDiv.classList.add('reactions');
-                    message.reactions.forEach((reaction) => {
-                        const reactionSpan = document.createElement('span');
-                        reactionSpan.classList.add('reaction');
-                        reactionSpan.textContent = reaction;
-                        reactionSpan.onclick = () => addReaction(message, reaction);
-                        reactionsDiv.appendChild(reactionSpan);
-                    });
-                    messageDiv.appendChild(reactionsDiv);
-                }
-
-                chatContainer.appendChild(messageDiv);
-            });
-
-            chatContainer.scrollTo({
-                top: chatContainer.scrollHeight,
-                behavior: 'smooth'
-            });
-        };
-
-        // =====================
-        // Add Reaction
-        // =====================
-        const addReaction = async (message, reaction) => {
-            if (!message.reactions) message.reactions = [];
-            if (!message.reactions.includes(reaction)) {
-                message.reactions.push(reaction);
-                await saveConversation();
-                renderConversation();
-            }
-        };
-
-        // =====================
-        // OpenRouter API Call
-        // =====================
-        const sendMessage = async () => {
-            const userInput = document.getElementById('userInput').value.trim();
-            if (!userInput) return;
-
-            try {
-                // Add user message
-                conversationHistory.push({ role: "user", content: userInput });
-                renderConversation();
-                document.getElementById('userInput').value = '';
-
-                // Show loading indicator
-                showLoading();
-
-                // API call
-                const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': 'Bearer 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',
-                        'Content-Type': 'application/json',
-                        'HTTP-Referer': window.location.href,
-                        'X-Title': 'Elih Assistant'
-                    },
-                    body: JSON.stringify({
-                        model: "meta-llama/llama-3.2-11b-vision-instruct:free",
-                        messages: conversationHistory
-                    })
-                });
-
-                if (!response.ok) throw new Error(`API Error: ${response.status}`);
-
-                const data = await response.json();
-                const aiReply = data.choices[0].message.content;
-
-                // Simulate typing delay based on response length
-                const typingDelay = Math.min(aiReply.length * 50, 3000); // Max 3 seconds
-                await new Promise((resolve) => setTimeout(resolve, typingDelay));
-
-                // Add AI response
-                conversationHistory.push({ role: "assistant", content: aiReply });
-                await saveConversation();
-                
-                // Update UI
-                hideLoading();
-                renderConversation();
-
-            } catch (error) {
-                console.error("API Error:", error);
-                hideLoading();
-                alert("Error: " + error.message);
-            }
-        };
-
-        // =====================
-        // Theme Toggle
-        // =====================
-        const toggleTheme = () => {
-            document.body.classList.toggle('dark-mode');
-            localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
-        };
-
-        // Initialize theme
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'dark') {
-            document.body.classList.add('dark-mode');
-        }
-
-        document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
-
-        // =====================
-        // Initialize App
-        // =====================
-        const initializeApp = async () => {
-            await loadConversation();
-            document.getElementById('sendBtn').addEventListener('click', sendMessage);
-            
-            // Enter key support
-            document.getElementById('userInput').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') sendMessage();
-            });
-        };
-
-        if (userId) {
-            initializeApp();
-        }
-    </script>
-        <!-- Previous HTML remains the same -->
-    <div id="input-container">
-        <input type="text" id="userInput" placeholder="Type or speak your message...">
-        <button id="sendBtn">Send</button>
-        <div id="voice-controls">
-            <button id="micButton">🎤</button>
-        </div>
-    </div>
-
-    <!-- Add Azure Speech SDK -->
-    <script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
-    
-    <script>
-        // =====================
-        // Azure Speech Config
-        // =====================
-        const AZURE_SPEECH_KEY = 'CSPdFdwXsQ2cnL9dtd0qNONQHv6IMGoT6nqlDwAKyjlLmFApkrbAJQQJ99ALACYeBjFXJ3w3AAAYACOGq0mA';
-        const AZURE_SERVICE_REGION = 'eastus';
-        const AZURE_VOICE_NAME = 'en-US-JennyNeural'; // Change to your preferred voice
-
+        // Speech SDK Objects
         let recognizer;
-        let synthesizer;
-        let isListening = false;
+        let mediaRecorder;
+        let audioChunks = [];
+        let synthesisPlayer;
 
-        // =====================
-        // Speech Recognition
-        // =====================
-        async function initializeRecognizer() {
-            const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(AZURE_SPEECH_KEY, AZURE_SERVICE_REGION);
+        // Initialize Speech SDK
+        (async function() {
+            const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(AZURE_KEY, AZURE_REGION);
             speechConfig.speechRecognitionLanguage = "en-US";
             
-            const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
+            // Setup synthesizer
+            const audioConfig = SpeechSDK.AudioConfig.fromDefaultSpeakerOutput();
+            synthesisPlayer = new SpeechSDK.SpeechSynthesizer(speechConfig, audioConfig);
+        })();
+
+        // Voice Recording Logic
+        document.getElementById('voiceButton').addEventListener('mousedown', startRecording);
+        document.getElementById('voiceButton').addEventListener('mouseup', stopRecording);
+
+        async function startRecording() {
+            audioChunks = [];
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+            mediaRecorder.start();
+            this.classList.add('recording');
+        }
+
+        async function stopRecording() {
+            mediaRecorder.stop();
+            this.classList.remove('recording');
+            
+            mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(audioChunks);
+                const audioUrl = URL.createObjectURL(audioBlob);
+                await processAudio(audioUrl);
+            };
+        }
+
+        // Speech to Text Processing
+        async function processAudio(audioUrl) {
+            const audioConfig = SpeechSDK.AudioConfig.fromWavFileInput(fetch(audioUrl));
             recognizer = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
-
-            recognizer.recognizing = (s, e) => {
-                document.getElementById('userInput').value = e.result.text;
-            };
-
-            recognizer.recognized = (s, e) => {
-                if (e.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
-                    document.getElementById('userInput').value = e.result.text;
+            
+            recognizer.recognizeOnceAsync(result => {
+                if (result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
+                    document.getElementById('userInput').value = result.text;
+                    sendMessage();
                 }
-            };
+            });
         }
 
-        // =====================
-        // Speech Synthesis
-        // =====================
-        async function initializeSynthesizer() {
-            const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(AZURE_SPEECH_KEY, AZURE_SERVICE_REGION);
-            speechConfig.speechSynthesisVoiceName = AZURE_VOICE_NAME;
-            synthesizer = new SpeechSDK.SpeechSynthesizer(speechConfig);
-        }
-
-        // =====================
-        // Voice Controls
-        // =====================
-        document.getElementById('micButton').addEventListener('click', async () => {
-            if (!isListening) {
-                try {
-                    await initializeRecognizer();
-                    recognizer.startContinuousRecognitionAsync();
-                    isListening = true;
-                    document.getElementById('micButton').classList.add('listening');
-                } catch (err) {
-                    console.error('Error starting recognition:', err);
-                }
-            } else {
-                recognizer.stopContinuousRecognitionAsync();
-                isListening = false;
-                document.getElementById('micButton').classList.remove('listening');
-            }
-        });
-
-        // =====================
-        // Text-to-Speech
-        // =====================
-        async function speakText(text) {
-            await initializeSynthesizer();
-            synthesizer.speakTextAsync(
-                text,
-                result => {
+        // Text to Speech Processing
+        async function synthesizeSpeech(text) {
+            return new Promise((resolve) => {
+                synthesisPlayer.speakTextAsync(text, result => {
                     if (result.reason === SpeechSDK.ResultReason.SynthesizingAudioCompleted) {
-                        console.log("Speech synthesized successfully");
+                        const audioUrl = URL.createObjectURL(new Blob([result.audioData]));
+                        resolve(audioUrl);
                     }
-                },
-                error => {
-                    console.error("Speech synthesis error:", error);
-                }
-            );
+                });
+            });
         }
 
-        // =====================
-        // Modified Send Message Function
-        // =====================
-        const sendMessage = async () => {
-            const userInput = document.getElementById('userInput').value.trim();
+        // Modified Message Handling
+        async function sendMessage() {
+            const input = document.getElementById('userInput');
+            const userInput = input.value.trim();
             if (!userInput) return;
 
-            try {
-                // ... (previous send message logic)
+            // Add user message
+            addMessage(userInput, 'user');
+            input.value = '';
 
-                // After getting AI response:
-                const aiReply = data.choices[0].message.content;
+            // Show dynamic loading
+            const loadingTime = Math.min(Math.max(userInput.length * 20, 1000), 5000);
+            showLoading(loadingTime);
+
+            try {
+                // Get AI response
+                const aiResponse = await getAIResponse(userInput,"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");
                 
-                // Speak the response
-                await speakText(aiReply);
+                // Convert to speech
+                const audioUrl = await synthesizeSpeech(aiResponse);
+                
+                // Add response with audio
+                addMessage(aiResponse, 'assistant', audioUrl);
 
-                // ... (rest of previous logic)
             } catch (error) {
-                // ... (error handling)
+                console.error("Error:", error);
             }
-        };
+        }
 
-        // Initialize speech services on load
-        (async () => {
-            try {
-                await initializeSynthesizer();
-            } catch (error) {
-                console.error('Error initializing speech services:', error);
+        // Add message with optional audio
+        function addMessage(content, role, audioUrl = null) {
+            const container = document.getElementById('chat-container');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+
+            if (audioUrl) {
+                messageDiv.innerHTML = `
+                    <div class="voice-message">
+                        <svg class="play-button" viewBox="0 0 24 24" onclick="playAudio('${audioUrl}')">
+                            <path fill="currentColor" d="M8 5v14l11-7z"/>
+                        </svg>
+                        ${content}
+                    </div>
+                `;
+            } else {
+                messageDiv.textContent = content;
             }
-        })();
+
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Audio Playback
+        function playAudio(url) {
+            new Audio(url).play();
+        }
+
+        // Dynamic Loading Animation
+        function showLoading(duration) {
+            const dots = document.createElement('div');
+            dots.className = 'loading-dots';
+            dots.innerHTML = '<span></span><span></span><span></span>';
+            
+            const tempMessage = document.createElement('div');
+            tempMessage.className = 'message assistant';
+            tempMessage.appendChild(dots);
+            
+            document.getElementById('chat-container').appendChild(tempMessage);
+            setTimeout(() => tempMessage.remove(), duration);
+        }
+
+        // Your existing AI integration functions
+        async function getAIResponse(prompt) {
+            // Your existing OpenRouter/AI logic here
+            return "This is a sample response from the AI.";
+        }
     </script>
 </body>
 </html>
