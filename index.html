@@ -204,9 +204,34 @@
                 max-width: 85%;
             }
         }
+        /* Add voice button styles */
+        #voice-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        #micButton {
+            padding: 12px;
+            border-radius: 50%;
+            border: none;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        #micButton.listening {
+            background: #dc3545;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
     </style>
 </head>
 <body>
+    
     <!-- Theme Toggle -->
     <button id="theme-toggle">🌓</button>
 
@@ -449,6 +474,129 @@
         if (userId) {
             initializeApp();
         }
+    </script>
+        <!-- Previous HTML remains the same -->
+    <div id="input-container">
+        <input type="text" id="userInput" placeholder="Type or speak your message...">
+        <button id="sendBtn">Send</button>
+        <div id="voice-controls">
+            <button id="micButton">🎤</button>
+        </div>
+    </div>
+
+    <!-- Add Azure Speech SDK -->
+    <script src="https://aka.ms/csspeech/jsbrowserpackageraw"></script>
+    
+    <script>
+        // =====================
+        // Azure Speech Config
+        // =====================
+        const AZURE_SPEECH_KEY = 'CSPdFdwXsQ2cnL9dtd0qNONQHv6IMGoT6nqlDwAKyjlLmFApkrbAJQQJ99ALACYeBjFXJ3w3AAAYACOGq0mA';
+        const AZURE_SERVICE_REGION = 'eastus';
+        const AZURE_VOICE_NAME = 'en-US-JennyNeural'; // Change to your preferred voice
+
+        let recognizer;
+        let synthesizer;
+        let isListening = false;
+
+        // =====================
+        // Speech Recognition
+        // =====================
+        async function initializeRecognizer() {
+            const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(AZURE_SPEECH_KEY, AZURE_SERVICE_REGION);
+            speechConfig.speechRecognitionLanguage = "en-US";
+            
+            const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
+            recognizer = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
+
+            recognizer.recognizing = (s, e) => {
+                document.getElementById('userInput').value = e.result.text;
+            };
+
+            recognizer.recognized = (s, e) => {
+                if (e.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
+                    document.getElementById('userInput').value = e.result.text;
+                }
+            };
+        }
+
+        // =====================
+        // Speech Synthesis
+        // =====================
+        async function initializeSynthesizer() {
+            const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(AZURE_SPEECH_KEY, AZURE_SERVICE_REGION);
+            speechConfig.speechSynthesisVoiceName = AZURE_VOICE_NAME;
+            synthesizer = new SpeechSDK.SpeechSynthesizer(speechConfig);
+        }
+
+        // =====================
+        // Voice Controls
+        // =====================
+        document.getElementById('micButton').addEventListener('click', async () => {
+            if (!isListening) {
+                try {
+                    await initializeRecognizer();
+                    recognizer.startContinuousRecognitionAsync();
+                    isListening = true;
+                    document.getElementById('micButton').classList.add('listening');
+                } catch (err) {
+                    console.error('Error starting recognition:', err);
+                }
+            } else {
+                recognizer.stopContinuousRecognitionAsync();
+                isListening = false;
+                document.getElementById('micButton').classList.remove('listening');
+            }
+        });
+
+        // =====================
+        // Text-to-Speech
+        // =====================
+        async function speakText(text) {
+            await initializeSynthesizer();
+            synthesizer.speakTextAsync(
+                text,
+                result => {
+                    if (result.reason === SpeechSDK.ResultReason.SynthesizingAudioCompleted) {
+                        console.log("Speech synthesized successfully");
+                    }
+                },
+                error => {
+                    console.error("Speech synthesis error:", error);
+                }
+            );
+        }
+
+        // =====================
+        // Modified Send Message Function
+        // =====================
+        const sendMessage = async () => {
+            const userInput = document.getElementById('userInput').value.trim();
+            if (!userInput) return;
+
+            try {
+                // ... (previous send message logic)
+
+                // After getting AI response:
+                const aiReply = data.choices[0].message.content;
+                
+                // Speak the response
+                await speakText(aiReply);
+
+                // ... (rest of previous logic)
+            } catch (error) {
+                // ... (error handling)
+            }
+        };
+
+        // Initialize speech services on load
+        (async () => {
+            try {
+                await initializeSynthesizer();
+            } catch (error) {
+                console.error('Error initializing speech services:', error);
+            }
+        })();
     </script>
 </body>
 </html>
