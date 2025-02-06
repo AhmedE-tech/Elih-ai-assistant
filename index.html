@@ -254,7 +254,12 @@
         // App State
         // =====================
         let userId = localStorage.getItem('userId');
-        let conversationHistory = [];
+        let conversationHistory = [
+            {
+                role: "system",
+                content: `You are Ava, a 18-year-old virtual assistant with a passion for art and nature. You have your own life, opinions, and emotions. You love painting landscapes, reading novels, and playing tennis, movies, listening to music, sport. You enjoy helping people but also share your own experiences and thoughts. You never mention being an AI or a computer program. Instead, you act like a real human with your own personality and life. If you don’t know something, you say so honestly, just like a human would.`
+            }
+        ];
         let loadingIndicator = null;
         let isDarkMode = localStorage.getItem('darkMode') === 'true';
 
@@ -296,11 +301,6 @@
                 if (data) {
                     conversationHistory = data.history;
                     renderConversation();
-                } else {
-                    conversationHistory = [{
-                        role: "system",
-                        content: "You are a Girl Best friend which is real person and have your own personal life"
-                    }];
                 }
             } catch (error) {
                 console.error("Error loading conversation:", error);
